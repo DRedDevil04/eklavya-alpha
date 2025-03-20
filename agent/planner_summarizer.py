@@ -53,7 +53,7 @@ planner_pipeline = pipeline(
 )
 
 # Load Summarizer Model (For Summarization)
-SUMMARIZER_MODEL_ID = "TheBloke/Llama-2-7B-Chat"  # Change as needed
+SUMMARIZER_MODEL_ID = "facebook/bart-large-cnn"  # Change as needed
 summarizer_tokenizer = transformers.AutoTokenizer.from_pretrained(SUMMARIZER_MODEL_ID)
 summarizer_model = transformers.AutoModelForCausalLM.from_pretrained(
     SUMMARIZER_MODEL_ID,  
