@@ -5,6 +5,7 @@ import time
 import re
 import logging
 from dotenv import load_dotenv  # Load environment variables
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 from interface.connector import SSHConnector
 
 # Configure logging
@@ -26,19 +27,29 @@ ssh = SSHConnector("192.168.122.186", "kali", "kali")
 ssh.create_ssh_session()
 
 # Load Planner Model (For Generating Commands)
-PLANNER_MODEL_ID = "TheBloke/Mistral-7B-Instruct-v0.1-AWQ"
-planner_tokenizer = transformers.AutoTokenizer.from_pretrained(PLANNER_MODEL_ID, token=api_key)
-planner_model = transformers.AutoModelForCausalLM.from_pretrained(
+PLANNER_MODEL_ID = "codellama/CodeLlama-7b-Python-hf"  # Use the Python-tuned variant for better reasoning
+
+# Load tokenizer
+planner_tokenizer = AutoTokenizer.from_pretrained(PLANNER_MODEL_ID, token=api_key)
+
+# Load model with optimized settings
+planner_model = AutoModelForCausalLM.from_pretrained(
     PLANNER_MODEL_ID,  
     device_map="auto",  
-    torch_dtype=torch.float16,  
+    torch_dtype="auto",  
     trust_remote_code=True,
-    token=api_key  # Pass the token explicitly
+    token=api_key  # Corrected token parameter
 )
-planner_pipeline = transformers.pipeline(
+
+# Define pipeline for text generation
+planner_pipeline = pipeline(
     "text-generation",
     model=planner_model,
     tokenizer=planner_tokenizer,
+    max_new_tokens=150,
+    do_sample=True,
+    temperature=0.7,
+    top_p=0.9
 )
 
 # Load Summarizer Model (For Summarization)
