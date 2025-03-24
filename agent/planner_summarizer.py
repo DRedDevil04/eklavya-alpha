@@ -31,20 +31,17 @@ PLANNER_MODEL_ID = "codellama/CodeLlama-7B-Instruct-hf"
 planner_tokenizer = AutoTokenizer.from_pretrained(PLANNER_MODEL_ID)
 planner_model = AutoModelForCausalLM.from_pretrained(
     PLANNER_MODEL_ID,
-    device_map="cpu",
-    torch_dtype=torch.float16,
-    offload_folder="offload"
+    device_map="auto",
+    torch_dtype=torch.float16
 )
 
 # Define pipeline for text generation
 planner_pipeline = pipeline(
-    "text-generation",
     model=planner_model,
     tokenizer=planner_tokenizer,
     max_new_tokens=150,
-    do_sample=True,
-    temperature=0.7,
-    top_p=0.9,
+    do_sample=False,
+    temperature=0.2,
     pad_token_id=planner_tokenizer.eos_token_id  # Avoid padding issues
 )
 
@@ -53,20 +50,18 @@ SUMMARIZER_MODEL_ID = "facebook/bart-large-cnn"
 summarizer_tokenizer = AutoTokenizer.from_pretrained(SUMMARIZER_MODEL_ID,token=api_key)
 summarizer_model = AutoModelForCausalLM.from_pretrained(
     SUMMARIZER_MODEL_ID,
-    device_map="cpu",
-    torch_dtype=torch.float16,
-    offload_folder="offload",
+    device_map="auto",
+    torch_dtype=torch.float16
     token=api_key
 )
 
 summarizer_pipeline = pipeline(
-    "text-generation",
+    "summarization",
     model=summarizer_model,
     tokenizer=summarizer_tokenizer,
     max_new_tokens=300,
-    do_sample=True,
-    temperature=0.7,
-    top_p=0.9
+    do_sample=False,
+    temperature=0.2
 )
 
 # Summarized history to track progress
