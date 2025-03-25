@@ -16,9 +16,9 @@ load_dotenv()
 
 # Load Summarizer Model
 class Summarizer:
-    def __init__(self, model_id="facebook/bart-large-cnn"):
+    def __init__(self, model_id="codellama/CodeLlama-7B-Instruct-hf"):
         """Initialize the summarizer model."""
-        self.device = torch.device("cuda")  # Ensuring it runs on CPU
+        self.device = torch.device("cpu")  # Ensuring it runs on CPU
         self.tokenizer = AutoTokenizer.from_pretrained(model_id)
         self.pipeline = pipeline(
             "summarization",

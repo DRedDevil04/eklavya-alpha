@@ -7,7 +7,7 @@ import torch
 from dotenv import load_dotenv
 from interface.connector import SSHConnector
 from agent.planner.Planner import Planner
-from agent.summariser.Summariser import Summarizer
+from agent.summariser.gpt_summariser import Summarizer
 
 torch.cuda.empty_cache()  # Clears the CUDA memory cache
 gc.collect()  # Collects garbage to free memory

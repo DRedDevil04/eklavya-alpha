@@ -32,8 +32,11 @@ class Planner:
     
     def _construct_prompt(self, context):
         """Constructs the input prompt with history."""
-        if self.history:
-            return (f"Here is a history of all actions taken and their outputs:\n{self.history}\n\n"
+        if context:
+            return (
+                "You are assisting in penetration testing via SSH on Kali Linux. "
+                "You have to perform the penetration test on 192.168.122.0/24 subnet."
+                f"Here is a history of all actions taken and their outputs:\n{context}\n\n"
                     "What is the next logical command to run? "
                     "Generate ONLY ONE NEW COMMAND within <CMD></CMD> tags.")
         return ("You are assisting in penetration testing via SSH on Kali Linux. "
