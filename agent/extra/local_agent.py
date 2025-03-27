@@ -6,8 +6,8 @@ from langchain_community.llms import LlamaCpp
 from langchain.chains import ConversationChain
 from langchain_huggingface import HuggingFaceEmbeddings
 from interface.connector import SSHConnector
-from agent.pentest_report import PentestReport
-from agent.document_loader import DocumentLoader  # Document Retrieval
+from agent.extra.pentest_report import PentestReport
+from agent.extra.document_loader import DocumentLoader  # Document Retrieval
 
 # Load environment variables
 load_dotenv()
