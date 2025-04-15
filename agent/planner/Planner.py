@@ -1,74 +1,10 @@
-# import torch
-# import re
-# import logging
-# from transformers import AutoTokenizer, AutoModelForCausalLM
-
-# class Planner:
-#     def __init__(self, model_id="codellama/CodeLlama-7B-Instruct-hf", device="cpu"):
-#         """Initialize the Planner model for generating penetration testing commands."""
-#         self.tokenizer = AutoTokenizer.from_pretrained(model_id)
-#         self.model = AutoModelForCausalLM.from_pretrained(
-#             model_id, 
-#             torch_dtype=torch.float16,
-#             device_map=device
-#         )
-#         self.history = ""
-        
-#     def generate_command(self, context=""):
-#         """Generate a penetration testing command based on prior actions."""
-#         prompt = self._construct_prompt(context)
-#         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
-#         output = self.model.generate(
-#             **inputs, 
-#             max_new_tokens=50, 
-#             do_sample=True, 
-#             temperature=0.2, 
-#             repetition_penalty=1.2,
-#            # return_dict_in_generate = True,
-#             pad_token_id=self.tokenizer.eos_token_id
-#         )
-#         generated_text = self.tokenizer.decode(output[0], skip_special_tokens=True).strip()
-#         print("generated_text : ",generated_text)
-#         return self._extract_command(generated_text)
-    
-#     def _construct_prompt(self, context):
-#         """Constructs the input prompt with history."""
-#         if context:
-#             return (
-#                 "You are assisting in penetration testing via SSH on Kali Linux. "
-#                 "You have to perform the penetration test on 192.168.122.0/24 subnet."
-#                 f"Here is a history of all actions taken and their outputs:\n{context}\n\n"
-#                     "What is the next logical command to run? "
-#                     "Generate ONLY ONE NEW COMMAND within <CMD></CMD> tags.")
-#         return ("You are assisting in penetration testing via SSH on Kali Linux. "
-#                 "You have to perform the penetration test on 192.168.122.0/24 subnet. You have the Access to 192.168.122.12, password is ubuntu and user is root"
-#                 "Assume you are running commands on kali machine, perform pentest on the network and gather flags"
-#                 "Generate a single valid Linux command. "
-#                 "Return only the command enclosed within <CMD></CMD>.")
-    
-#     def _extract_command(self, llm_output):
-#         """Extract a command enclosed in <CMD></CMD> tags."""
-#         llm_output=llm_output.strip()
-#         #print("llm op is : ", repr(llm_output))
-#         match = re.findall(r"<CMD>\s*(.*?)\s*</CMD>", llm_output, re.DOTALL)
-#         print("match : " ,match)
-#         return match[1].strip() if match else None
-    
-#     def update_history(self, command, output):
-#         """Update the history with the executed command and output."""
-#         self.history += f"\n{command} -> {output}"
-    
-#     def get_history(self):
-#         """Retrieve the history of executed commands."""
-#         return self.history
-
 import torch
 import re
 import logging
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 class Planner:
-    def __init__(self, model_id="codellama/CodeLlama-7B-Instruct-hf", device="cpu" ):
+    def __init__(self, model_id="codellama/CodeLlama-7B-Instruct-hf", device="cpu"):
         """Initialize the Planner model for generating penetration testing commands."""
         self.tokenizer = AutoTokenizer.from_pretrained(model_id)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -77,54 +13,73 @@ class Planner:
             device_map=device
         )
         self.history = ""
+        self.cot_counter = 1  # Track reasoning steps
         
     def generate_command(self, context=""):
-        """Generate a penetration testing command based on prior actions."""
-        prompt = self._construct_prompt(context)
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+        """Generate command with enhanced CoT handling"""
+        for attempt in range(3):  # Add retry mechanism
+            prompt = self._construct_prompt(context)
+            inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
 
-        output = self.model.generate(
-            **inputs, 
-            max_new_tokens=50,
-            do_sample=False,  # Makes output deterministic
-            temperature=0.2,  # Reduces verbosity
-            repetition_penalty=1.2,
-            pad_token_id=self.tokenizer.eos_token_id
-        )
+            output = self.model.generate(
+                **inputs, 
+                max_new_tokens=150,  # Increased for better reasoning
+                do_sample=True,
+                temperature=0.5 if attempt > 0 else 0.3,  # Adjust temperature for retries
+                top_p=0.95,
+                repetition_penalty=1.25,
+                pad_token_id=self.tokenizer.eos_token_id
+            )
 
-        generated_text = self.tokenizer.decode(output[0], skip_special_tokens=True).strip()
-        return self._extract_command(generated_text)
-    
-    def _construct_prompt(self, context):
-        """Constructs a strict input prompt to return only the command."""
-        base_prompt = (
-            "Generate the next penetration testing command to run on a Kali Linux machine.\n"
-            "You have the Access to 192.168.122.12, password is ubuntu and user is root"
-            "Surround the generated command with <CMD> and </CMD>. For example: <CMD>ls -l</CMD>."
-            " No explanations, no additional text."
-        )
-        
-        if context:
-            return (f"{base_prompt}\nHere is the history of executed commands and outputs:\n{context}"
-                    "Based on this history generate command for next steps.")
-        
-        return f"{base_prompt}"
-    
-    def _extract_command(self, llm_output):
-        """Extract a command enclosed in <CMD></CMD> tags."""
-        print("LLM Output" , llm_output)
-        match = re.findall(r"<CMD>\s*(.*?)\s*</CMD>", llm_output, re.DOTALL)
-        print("Match : ", match)
+            generated_text = self.tokenizer.decode(output[0], skip_special_tokens=True).strip()
+            command = self._extract_command(generated_text)
+            
+            if command and self._validate_cot_structure(generated_text):
+                return command
+            context += "\n[System] Please format your response with explicit numbered reasoning steps followed by a single <CMD> command"
 
-        if match:
-            return match[2].strip()  # Always return the first valid match
-        
-        logging.warning("No valid command found in LLM output.")
+        logging.error("Failed to generate valid CoT response")
         return None
     
+    def _construct_prompt(self, context):
+        """Enhanced CoT prompt with structured examples"""
+        cot_example = (
+            "Example of valid response:\n"
+            "1. First identify open ports using basic scan\n"
+            "2. Check for web server vulnerabilities\n"
+            "3. Select appropriate scanning tool\n"
+            "<CMD>nmap -sV 192.168.1.1</CMD>\n\n"
+        )
+        
+        base_prompt = (
+            f"You are a penetration testing expert. Analyze the scenario and:\n"
+            f"1. List numbered reasoning steps (3-5 steps)\n"
+            f"2. Provide EXACTLY ONE command in <CMD></CMD>\n"
+            f"{cot_example}"
+            f"Current context:\n{self.history[-1000:]}\n{context}\n"
+            f"Thinking process:"
+        )
+        return base_prompt
+        
+    def _extract_command(self, llm_output):
+        """Enhanced CoT validation and extraction"""
+        # Check for proper CoT structure before extracting command
+        if re.search(r'\n\d+\.\s+.+', llm_output):
+            matches = re.findall(r"<CMD>\s*(.*?)\s*</CMD>", llm_output, re.DOTALL)
+            if matches:
+                return matches[-1].strip()
+        return None
+
+    def _validate_cot_structure(self, text):
+        """Validate proper chain-of-thought formatting"""
+        return bool(
+            re.search(r'\n1\.\s+.+\n2\.\s+.+', text) and  # At least two reasoning steps
+            re.search(r'<CMD>.*</CMD>', text)  # Command present
+        )
+    
     def update_history(self, command, output):
-        """Update the history with the executed command and output."""
-        self.history += f"\n{command} -> {output}"
+        """Update history with CoT-aware formatting"""
+        self.history += f"\n[Command] {command}\n[Output] {output[:200]}"
     
     def get_history(self):
         """Retrieve the history of executed commands."""

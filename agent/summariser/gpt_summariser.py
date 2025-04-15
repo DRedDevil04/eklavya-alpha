@@ -1,6 +1,7 @@
 import os
 import logging
 import openai
+import re
 from dotenv import load_dotenv
 
 # Configure logging
@@ -27,34 +28,59 @@ class Summarizer:
         self.history_summary = ""
 
     def summarize(self, command, output):
-        """Summarize penetration testing history, focusing on newly executed commands."""
+        """Summarize penetration testing history with CoT reasoning."""
         
-        prompt = (
-            "You are summarizing penetration testing activity.\n"
-            "Update the summary with the latest command and output while keeping it concise.\n"
-            "Ensure the summary is structured, avoiding duplication.\n\n"
-            f"Previous Summary: {self.history_summary}\n\n"
+        cot_prompt = (
+            "You are summarizing penetration testing activity. Follow these steps:\n"
+            "1. Analyze the new command and output for critical findings\n"
+            "2. Identify connections to previous actions in the existing summary\n"
+            "3. Determine what needs to be updated or maintained\n"
+            "4. Organize information by priority and relevance\n"
+            "5. Compose the updated summary\n\n"
+            "Format your response as:\n"
+            "<REASONING>\n"
+            "1. [Step 1 analysis]\n"
+            "2. [Step 2 connections]\n"
+            "...\n"
+            "</REASONING>\n"
+            "<SUMMARY>\n[Updated summary here]\n</SUMMARY>"
+            
+            f"\n\nExisting Summary: {self.history_summary}\n"
             f"New Command: {command}\n"
-            f"New Output: {output}\n"
-            "Update the summary accordingly."
+            f"Command Output: {output}\n"
         )
 
         try:
             response = openai.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "You are an expert penetration testing summarizer."},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": "You are an expert penetration testing summarizer that uses explicit reasoning."},
+                    {"role": "user", "content": cot_prompt}
                 ],
-                temperature=0.3  # Lower temperature for more consistent responses
+                temperature=0.3,
+                max_tokens=500
             )
 
-            new_summary = response.choices[0].message.content.strip()
-
-            if new_summary:
-                self.history_summary = new_summary  # Replace old summary with updated one
+            full_response = response.choices[0].message.content.strip()
+            
+            # Extract summary from structured response
+            summary_match = re.search(r'<SUMMARY>\n?(.*?)\n?</SUMMARY>', full_response, re.DOTALL)
+            if summary_match:
+                new_summary = summary_match.group(1).strip()
+                self.history_summary = new_summary
+                
+                # Log reasoning process for audit
+                reasoning_match = re.search(r'<REASONING>\n?(.*?)\n?</REASONING>', full_response, re.DOTALL)
+                if reasoning_match:
+                    reasoning_steps = reasoning_match.group(1).strip()
+                    logging.info(f"Summary Reasoning Steps:\n{reasoning_steps}")
+                
                 logging.info(f"Updated summary: {self.history_summary}")
+                return self.history_summary
 
+            # Fallback if XML tags missing
+            logging.warning("CoT structure missing in response, using full response")
+            self.history_summary = full_response
             return self.history_summary
 
         except Exception as e:
