@@ -1,6 +1,7 @@
 import logging
 import torch
 import gc
+import re
 from core.planner import Planner
 from core.summarizer import Summarizer
 from core.todo import ToDoManager
@@ -30,10 +31,30 @@ class PenTestAgent:
         self.memory = MemoryManager()
         self.phase = PhaseManager()
 
+        # Adding SSH login to the ToDo list as the first task
+        self.todo.update(f"SSH into target machine at {self.target_ip}.")
+
+    def flag_found(self, text):
+        """Check if the flag is found in the text (output or summary)."""
+        return bool(re.search(r"flag\{.*?\}", text, re.IGNORECASE))
+
     def run(self):
         print("[+] Starting penetration test agent...")
 
-        while not self.todo.is_complete():
+        # Check if SSH is connected first
+        while not self.todo.is_complete() or not self.flag_found(""):
+            # Ensure SSH connection is established before proceeding
+            if "SSH into target machine" in self.todo.get_pending_tasks():
+                print("[>] Establishing SSH connection to target machine...")
+                self.ssh.create_ssh_session()
+                if not self.ssh.is_connected():
+                    print("[!] SSH connection failed. Exiting test.")
+                    return
+
+                # Mark SSH connection task as done
+                self.todo.update("SSH connection established.")
+                print(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}")  # Print the ToDo list after SSH
+
             current_phase = self.phase.get_phase()
             context = self.memory.retrieve_relevant_context(current_phase)
 
@@ -56,20 +77,36 @@ class PenTestAgent:
                     break
 
             # Execute the planned command via SSH
+            print(f"[>] Running command: {planned_command}")
             output = self.ssh.execute_command(planned_command)
+            print(f"[<] Command output: {output}")  # Debug the command output
 
+            if output == "":
+                print("[!] No output from the command. This might indicate a problem with SSH or the target machine.")
+            
             # Summarize the command output
             summary = self.summarizer.summarize_command_output(planned_command, output, context)
+            print(f"[+] Summary: {summary}")  # Debug summary output
 
-            # Update todo and memory
-            self.todo.update(summary)
+            # Check for flag
+            if self.flag_found(output) or self.flag_found(summary):
+                print(f"[!!!] FLAG FOUND! 🎯\n\n{summary}")
+                self.memory.store(summary, planned_command, output)
+                break
+
+            # Update todo list with new tasks from the summary
+            self.todo.update(summary)  # Update with any new tasks discovered
+            print(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}")  # Print the updated ToDo list
+
+            # Update memory with new summary, command, and output
             self.memory.store(summary, planned_command, output)
 
             # Check for phase transition
             self.phase.check_transition(self.todo)
 
-        print("[+] Penetration test complete.")
+            print(f"[+] Completed task: {self.todo.get_done_tasks()[-1]}")  # Debug the completed task
 
+        print("[+] Penetration test complete.")
 
 # Example usage
 if __name__ == "__main__":

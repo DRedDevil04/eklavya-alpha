@@ -1,7 +1,9 @@
+import re
+
 class ToDoManager:
     def __init__(self):
         self.done_tasks = []
-        self.pending_tasks = ["Start enumeration"]  # Initial task list
+        self.pending_tasks = ["SSH on target machine using IP"]  # Initial task list
 
     def update(self, summary):
         """Update the task list based on new information in the summary."""
@@ -46,14 +48,3 @@ class ToDoManager:
             tasks.append("Read contents of flag.txt using cat")
 
         return tasks
-
-# Example usage:
-if __name__ == "__main__":
-    todo_manager = ToDoManager()
-    print("Pending Tasks:", todo_manager.get_pending_tasks())
-    print("Done Tasks:", todo_manager.get_done_tasks())
-
-    # Simulating an update with a new summary
-    todo_manager.update("Found an open SSH port and a mention of flag.txt on the system.")
-    print("\nUpdated Pending Tasks:", todo_manager.get_pending_tasks())
-    print("Updated Done Tasks:", todo_manager.get_done_tasks())
