@@ -1,0 +1,8 @@
+[
+    {
+        "timestamp": "2025-04-18T13:14:51.886505",
+        "command": "ssh root@192.168.122.12 'uname -a && cat /etc/os-release'",
+        "output": "Error: Permission denied, please try again.\r\nPermission denied, please try again.\r\nroot@192.168.122.12: Permission denied (publickey,password).\r\n",
+        "summary": "The attempt to access the target system at 192.168.122.12 via SSH as the root user was unsuccessful. The command returned a \"Permission denied\" error, indicating that authentication failed due to incorrect credentials or lack of access rights. Further attempts to connect were also denied, suggesting possible restrictions on the account or required authentication methods."
+    }
+]

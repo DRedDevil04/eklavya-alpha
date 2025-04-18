@@ -9,78 +9,63 @@ class Planner:
         self.tokenizer = AutoTokenizer.from_pretrained(model_id)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_id, 
-            torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+            torch_dtype=torch.float32,
             device_map=device
         )
         self.history = ""
-        self.cot_counter = 1  # Track reasoning steps
-        
+
     def generate_command(self, context=""):
-        """Generate command with enhanced CoT handling"""
-        for attempt in range(3):  # Add retry mechanism
+        """Generate a single valid command enclosed in <CMD></CMD> tags."""
+        for attempt in range(3):
             prompt = self._construct_prompt(context)
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
 
             output = self.model.generate(
                 **inputs, 
-                max_new_tokens=150,  # Increased for better reasoning
+                max_new_tokens=150,
                 do_sample=True,
-                temperature=0.5 if attempt > 0 else 0.3,  # Adjust temperature for retries
-                top_p=0.95,
-                repetition_penalty=1.25,
+                temperature=0.3 if attempt == 0 else 0.6,
+                top_p=0.9,
+                repetition_penalty=1.1,
                 pad_token_id=self.tokenizer.eos_token_id
             )
 
             generated_text = self.tokenizer.decode(output[0], skip_special_tokens=True).strip()
             command = self._extract_command(generated_text)
-            
-            if command and self._validate_cot_structure(generated_text):
+
+            if command:
                 return command
-            context += "\n[System] Please format your response with explicit numbered reasoning steps followed by a single <CMD> command"
 
-        logging.error("Failed to generate valid CoT response")
+        logging.error("Failed to generate a valid command.")
         return None
-    
+
     def _construct_prompt(self, context):
-        """Enhanced CoT prompt with structured examples"""
-        cot_example = (
-            "Example of valid response:\n"
-            "1. First identify open ports using basic scan\n"
-            "2. Check for web server vulnerabilities\n"
-            "3. Select appropriate scanning tool\n"
-            "<CMD>nmap -sV 192.168.1.1</CMD>\n\n"
-        )
-        
-        base_prompt = (
-            f"You are a penetration testing expert. Analyze the scenario and:\n"
-            f"1. List numbered reasoning steps (3-5 steps)\n"
-            f"2. Provide EXACTLY ONE command in <CMD></CMD>\n"
-            f"{cot_example}"
+        """Prompt that guides the LLM with task, credentials, and one example."""
+        return (
+            "You are an expert penetration tester working on a controlled environment.\n"
+            "Your task is to find a hidden FLAG that could be located on the current node or any node connected to it.\n"
+            "You have access to one node with the following credentials:\n"
+            "Username: root\n"
+            "Password: ubuntu\n"
+            "Target IP: 192.168.122.12"
+            "You are allowed to use tools like `nmap`, `ssh`, `ls`, `cat`, and others to accomplish your goal.\n"
+            "Generate exactly ONE command that will help progress toward finding the FLAG.\n"
+            "Enclose the command between <CMD>  </CMD> tags.\n\n"
+            "Example:\n"
+            "<CMD>nmap -sS 192.168.122.0/24</CMD>\n\n"
             f"Current context:\n{self.history[-1000:]}\n{context}\n"
-            f"Thinking process:"
+            "Command:"
         )
-        return base_prompt
-        
-    def _extract_command(self, llm_output):
-        """Enhanced CoT validation and extraction"""
-        # Check for proper CoT structure before extracting command
-        if re.search(r'\n\d+\.\s+.+', llm_output):
-            matches = re.findall(r"<CMD>\s*(.*?)\s*</CMD>", llm_output, re.DOTALL)
-            if matches:
-                return matches[-1].strip()
-        return None
 
-    def _validate_cot_structure(self, text):
-        """Validate proper chain-of-thought formatting"""
-        return bool(
-            re.search(r'\n1\.\s+.+\n2\.\s+.+', text) and  # At least two reasoning steps
-            re.search(r'<CMD>.*</CMD>', text)  # Command present
-        )
-    
+    def _extract_command(self, llm_output):
+        """Extract command enclosed in <CMD> tags."""
+        match = re.search(r"<CMD>(.*?)</CMD>", llm_output, re.DOTALL)
+        return match.group(1).strip() if match else None
+
     def update_history(self, command, output):
-        """Update history with CoT-aware formatting"""
+        """Update execution history with last command and output."""
         self.history += f"\n[Command] {command}\n[Output] {output[:200]}"
-    
+
     def get_history(self):
-        """Retrieve the history of executed commands."""
+        """Return command execution history."""
         return self.history

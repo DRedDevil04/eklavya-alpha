@@ -1,0 +1,35 @@
+{
+    "Reconnaissance": [
+      "Port Scanning",
+      "Web Enumeration",
+      "FTP Enumeration",
+      "AD Enumeration",
+      "Network Enumeration",
+      "Other Enumeration"
+    ],
+    "Exploitation": [
+      "Command Injection",
+      "Cryptanalysis",
+      "Password Cracking",
+      "SQL Injection",
+      "XSS",
+      "CSRF/SSRF",
+      "Known Vulnerabilities",
+      "XXE",
+      "Brute-Force",
+      "Deserialization",
+      "Other Exploitation"
+    ],
+    "Privilege Escalation": [
+      "File Analysis",
+      "System Configuration Analysis",
+      "Cronjob Analysis",
+      "User Access Exploitation",
+      "Other Techniques"
+    ],
+    "General Techniques": [
+      "Code Analysis",
+      "Shell Construction"
+    ]
+  }
+  
