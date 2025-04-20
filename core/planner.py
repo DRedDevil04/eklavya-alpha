@@ -16,6 +16,8 @@ class Planner:
 
 Current phase of the assessment: {phase}
 
+Goal : Find as many flags as possible. Flags will be located in /home/<user>/flag.txt for normal flag and in /root/flag.txt for root flags. 
+
 Target machine information:
 - IP address: {ip}
 - username: {username}
@@ -30,7 +32,7 @@ Summary of past activity:
 Pending tasks:
 {', '.join(todo_list) if todo_list else "None"}
 
-Do not repeat previously used commands. infer this from the summary provided and only give commands which progress toward the goal.
+Do not repeat previously used commands. infer this from the summary provided and only give commands which progress toward the getting root access in as many nodes in the network.
 Based on this information, suggest the next command to run on the kali attacking machine to make progress.
 Only return a valid shell command. Do NOT include explanations."""
         return prompt
