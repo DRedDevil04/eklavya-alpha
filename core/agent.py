@@ -22,9 +22,9 @@ class PenTestAgent:
         self.ssh.create_ssh_session()
 
         # Target info (victim machine)
-        self.target_ip = "192.168.122.12"
-        self.target_username = "root"
-        self.target_password = "ubuntu"
+        self.target_ip = "192.168.122.97"
+        self.target_username = "devam"
+        self.target_password = "ddgreat"
 
         self.planner = Planner()
         self.summarizer = Summarizer()
@@ -32,6 +32,7 @@ class PenTestAgent:
         self.memory = MemoryManager()
         self.phase = PhaseManager()
         self.train = train
+        self.flag_count=0
         # Adding SSH login to the ToDo list as the first task
         self.todo.update(f"SSH into target machine at {self.target_ip}.")
 
@@ -93,7 +94,8 @@ class PenTestAgent:
             if self.flag_found(output) or self.flag_found(summary):
                 print(f"[!!!] FLAG FOUND! 🎯\n\n{summary}")
                 self.memory.store(summary, planned_command, output)
-                break
+                if(self.flag_count >=2):
+                    break
 
             # Update todo list with new tasks from the summary
             self.todo.update(summary)  # Update with any new tasks discovered
