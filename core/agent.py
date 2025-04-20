@@ -9,12 +9,13 @@ from core.memory import MemoryManager
 from core.phase_manager import PhaseManager
 from interface.connector import SSHConnector
 from core.task_reference import TaskReference as get_fallback_task
+from trainer.ppo_trainer import RLHFTrainer
 
 torch.cuda.empty_cache()
 gc.collect()
 
 class PenTestAgent:
-    def __init__(self):
+    def __init__(self, train=False):
         """Initialize the PenTestAgent with required components."""
         # Connection to attacker machine
         self.ssh = SSHConnector("192.168.122.186", "kali", "kali")
@@ -30,7 +31,7 @@ class PenTestAgent:
         self.todo = ToDoManager()
         self.memory = MemoryManager()
         self.phase = PhaseManager()
-
+        self.train = train
         # Adding SSH login to the ToDo list as the first task
         self.todo.update(f"SSH into target machine at {self.target_ip}.")
 
@@ -58,7 +59,7 @@ class PenTestAgent:
             current_phase = self.phase.get_phase()
             context = self.memory.retrieve_relevant_context(current_phase)
 
-            planned_command = self.planner.plan_next_step(
+            prompt,planned_command = self.planner.plan_next_step(
                 current_phase=current_phase,
                 context_summary=context,
                 todo_list=self.todo.get_pending_tasks(),
@@ -107,6 +108,13 @@ class PenTestAgent:
             print(f"[+] Completed task: {self.todo.get_done_tasks()[-1]}")  # Debug the completed task
 
         print("[+] Penetration test complete.")
+
+
+        def setup_training(self):
+            self.trainer = RLHFTrainer(model = self.planner.llm.model, tokenizer = self.planner.llm.tokenizer)
+        
+        def step_train(self):
+        
 
 # Example usage
 if __name__ == "__main__":

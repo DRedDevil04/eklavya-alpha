@@ -137,7 +137,16 @@ class LLMClient:
         response = openai.ChatCompletion.create(
             model=self.summarizer_model,
             messages=[
-                {"role": "system", "content": "You are a helpful assistant specialized in summarizing penetration test outputs."},
+                {"role": "system", "content": 
+                    ''' You are a helpful assistant specialized in summarizing penetration test outputs. 
+                        Summarize outputs and assign the commands(based on previous context and output of the command) a reward score(range -10 to 10) for RLHF training .
+                        Output only in the following json format:
+                        {
+                            "summary": summary of the command,
+                            "reward": reward(-10 to 10)
+                        }
+                        Strictly output raw json.
+                        '''},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=max_tokens,

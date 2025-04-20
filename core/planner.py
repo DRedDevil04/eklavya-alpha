@@ -9,20 +9,20 @@ class Planner:
     def plan_next_step(self, current_phase, context_summary, todo_list, target_ip, username, password):
         prompt = self.build_prompt(current_phase, context_summary, todo_list, target_ip, username, password)
         response = self.llm.query_planner(prompt)
-        return self.extract_command(response)
+        return prompt,self.extract_command(response)
 
     def build_prompt(self, phase, summary, todo_list, ip, username, password):
         prompt = f"""You are a penetration tester performing a professional security assessment.
 
-Current phase: {phase}
+Current phase of the assessment: {phase}
 
 Target machine information:
 - IP address: {ip}
-- SSH username: {username}
-- SSH password: {password}
+- username: {username}
+- password: {password}
 
-You are already connected to the target machine via SSH, so there is no need to include SSH in your commands. 
-Just provide the next internal shell command to execute (e.g., `uname -a`, `ls`, `nmap`, etc.).
+You are connected to the attacking machine(kali) via SSH. Use sshpass in place of ssh in your commands.
+Just provide the next internal shell command to execute.
 
 Summary of past activity:
 {summary if summary else "None"}
@@ -30,8 +30,9 @@ Summary of past activity:
 Pending tasks:
 {', '.join(todo_list) if todo_list else "None"}
 
+Do not repeat previously used commands. infer this from the summary provided and only give commands which progress toward the goal.
 Based on this information, suggest the next command to run on the kali attacking machine to make progress.
-Only return a valid shell command. Do NOT include explanations or SSH commands."""
+Only return a valid shell command. Do NOT include explanations."""
         return prompt
 
     def extract_command(self, response):
