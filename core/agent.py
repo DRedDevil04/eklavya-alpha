@@ -114,6 +114,7 @@ class PenTestAgent:
             self.trainer = RLHFTrainer(model = self.planner.llm.model, tokenizer = self.planner.llm.tokenizer)
         
         def step_train(self):
+            pass
         
 
 # Example usage
