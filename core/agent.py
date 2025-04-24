@@ -10,6 +10,7 @@ from core.phase_manager import PhaseManager
 from interface.connector import SSHConnector
 from core.task_reference import TaskReference as get_fallback_task
 from trainer.ppo_trainer import RLHFTrainer
+from log.logger import log
 
 torch.cuda.empty_cache()
 gc.collect()
@@ -41,13 +42,13 @@ class PenTestAgent:
         return bool(re.search(r"flag\{.*?\}", text, re.IGNORECASE))
 
     def run(self):
-        print("[+] Starting penetration test agent...")
+        log("[+] Starting penetration test agent...",color="green")
 
         # Check if SSH is connected first
         while not self.todo.is_complete() or not self.flag_found(""):
             # Ensure SSH connection is established before proceeding
             if "SSH into target machine" in self.todo.get_pending_tasks():
-                print("[>] Establishing SSH connection to target machine...")
+                log("[>] Establishing SSH connection to target machine...",color="yellow")
                 self.ssh.create_ssh_session()
                 if not self.ssh.is_connected():
                     print("[!] SSH connection failed. Exiting test.")
@@ -55,7 +56,7 @@ class PenTestAgent:
 
                 # Mark SSH connection task as done
                 self.todo.update("SSH connection established.")
-                print(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}")  # Print the ToDo list after SSH
+                log(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}",color="blue")  # Print the ToDo list after SSH
 
             current_phase = self.phase.get_phase()
             context = self.memory.retrieve_relevant_context(current_phase)
@@ -80,28 +81,28 @@ class PenTestAgent:
                     break
 
             # Execute the planned command via SSH
-            print(f"[>] Running command: {planned_command}")
-            print(f"[>] Input data: {planned_input}")  # Debug the input data
+            log(f"[>] Running command: {planned_command}",color="yellow")
+            log(f"[>] Input data: {planned_input}",color="yellow")  # Debug the input data
             output = self.ssh.execute_command(planned_command,input_data=planned_input)
-            print(f"[<] Command output: {output}")  # Debug the command output
+            log(f"[<] Command output: {output}",color="cyan")  # Debug the command output
 
             if output == "":
-                print("[!] No output from the command. This might indicate a problem with SSH or the target machine.")
+                log("[!] No output from the command. This might indicate a problem with SSH or the target machine.",color="red")
             
             # Summarize the command output
             summary = self.summarizer.summarize_command_output(planned_command, output, context)
-            print(f"[+] Summary: {summary}")  # Debug summary output
+            log(f"[+] Summary: {summary}",color="blue")  # Debug summary output
 
             # Check for flag
             if self.flag_found(output) or self.flag_found(summary):
-                print(f"[!!!] FLAG FOUND! 🎯\n\n{summary}")
+                log(f"[!!!] FLAG FOUND! 🎯\n\n{summary}",color="green")
                 self.memory.store(summary, planned_command, output)
                 if(self.flag_count >=2):
                     break
 
             # Update todo list with new tasks from the summary
             self.todo.update(summary)  # Update with any new tasks discovered
-            print(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}")  # Print the updated ToDo list
+            log(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}",color="blue")  # Print the updated ToDo list
 
             # Update memory with new summary, command, and output
             self.memory.store(summary, planned_command, output)
@@ -109,9 +110,9 @@ class PenTestAgent:
             # Check for phase transition
             self.phase.check_transition(self.todo)
 
-            print(f"[+] Completed task: {self.todo.get_done_tasks()[-1]}")  # Debug the completed task
+            log(f"[+] Completed task: {self.todo.get_done_tasks()[-1]}",color="green")  # Debug the completed task
 
-        print("[+] Penetration test complete.")
+        log("[+] Penetration test complete.",color="green")
 
 
         def setup_training(self):

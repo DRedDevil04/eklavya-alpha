@@ -1,7 +1,7 @@
 import re
 import json
 from llm_interface.llm_client import LLMClient
-
+from log.logger import log
 class Planner:
     def __init__(self):
         # Initialize LLMClient with OpenAI
@@ -10,7 +10,7 @@ class Planner:
     def plan_next_step(self, current_phase, context_summary, todo_list, target_ip, username, password, memory):
         prompt = self.build_prompt(current_phase, context_summary, todo_list, target_ip, username, password, memory)
         response = self.llm.query_planner(prompt)
-        print("LLM Response: ", response)
+        log(f"LLM Response: {response}", color="pink")  # Debug the LLM response
         return self.extract_command(response)
 
     def build_prompt(self, phase, summary, todo_list, ip, username, password, memory):
@@ -56,7 +56,7 @@ json with keys, command and input like {{
 }}
 
 """
-        print("Prompt: ", prompt)
+        log(f"Prompt: {prompt}", color="blue")  # Debug the prompt
         return prompt
 
     def extract_command(self, response):
