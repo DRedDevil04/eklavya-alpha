@@ -1,5 +1,5 @@
-# connector.py
 import paramiko
+import time
 
 class SSHConnector:
     def __init__(self, kali_ip, password, username='root'):
@@ -27,28 +27,59 @@ class SSHConnector:
             self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             
             # Connect to the server
-            self.ssh_client.connect(self.kali_ip, username=self.username, password=self.password)
+            self.ssh_client.connect(
+                self.kali_ip,
+                username=self.username,
+                password=self.password,
+                look_for_keys=False  # Disable key-based auth
+            )
             print("SSH session established.")
         except Exception as e:
             print(f"Failed to create SSH session: {str(e)}")
             self.ssh_client = None
     
-    def execute_command(self, command):
+    def execute_command(self, command, input_data=None, timeout=5):
         """
-        Executes a command on the remote server.
+        Executes a command on the remote server, optionally handling interactive input.
 
-        :param command: The command to execute on the remote server.
+        :param command: The command to execute.
+        :param input_data: Input to send if a prompt is detected (e.g., sudo password).
+        :param timeout: Timeout in seconds to wait for output.
         :return: Output of the executed command.
         """
         if not self.ssh_client:
             return "SSH session is not established."
         
         try:
-            # Execute the command
-            stdin, stdout, stderr = self.ssh_client.exec_command(command)
+            # Execute command with PTY for interactive sessions
+            stdin, stdout, stderr = self.ssh_client.exec_command(
+                command,
+                get_pty=True  # Allocate pseudo-terminal
+            )
             
-            # Read the output of the command
-            output = stdout.read().decode('utf-8')
+            output = ""
+            start_time = time.time()
+            
+            # Read output in real-time to detect prompts
+            while True:
+                if stdout.channel.recv_ready():
+                    chunk = stdout.channel.recv(1024).decode('utf-8')
+                    output += chunk
+                    
+                    # Check for password prompt
+                    if input_data and ("password" in output.lower() or "[sudo]" in output.lower()):
+                        stdin.write(input_data + "\n")  # Send input
+                        stdin.flush()
+                        break  # Exit loop after sending input
+                
+                # Check if command has finished or timeout
+                if stdout.channel.exit_status_ready() or (time.time() - start_time) > timeout:
+                    break
+                
+                time.sleep(0.1)  # Avoid busy-waiting
+            
+            # Read remaining output
+            output += stdout.read().decode('utf-8')
             error = stderr.read().decode('utf-8')
             
             if error:
@@ -67,4 +98,3 @@ class SSHConnector:
             print("SSH session closed.")
         else:
             print("No active SSH session to close.")
-

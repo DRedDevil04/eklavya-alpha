@@ -60,13 +60,14 @@ class PenTestAgent:
             current_phase = self.phase.get_phase()
             context = self.memory.retrieve_relevant_context(current_phase)
 
-            prompt,planned_command = self.planner.plan_next_step(
+            planned_command,planned_input = self.planner.plan_next_step(
                 current_phase=current_phase,
                 context_summary=context,
                 todo_list=self.todo.get_pending_tasks(),
                 target_ip=self.target_ip,
                 username=self.target_username,
-                password=self.target_password
+                password=self.target_password,
+                memory=self.memory
             )
 
             if not planned_command:
@@ -80,7 +81,8 @@ class PenTestAgent:
 
             # Execute the planned command via SSH
             print(f"[>] Running command: {planned_command}")
-            output = self.ssh.execute_command(planned_command)
+            print(f"[>] Input data: {planned_input}")  # Debug the input data
+            output = self.ssh.execute_command(planned_command,input_data=planned_input)
             print(f"[<] Command output: {output}")  # Debug the command output
 
             if output == "":

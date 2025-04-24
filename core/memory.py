@@ -41,6 +41,20 @@ class MemoryManager:
         ]
         return relevant_entries
 
+    def get_previous_context(self):
+        """Retrieve the latest memory entry's command and output."""
+        if self.memory:
+            latest_entry = self.memory[-1]
+            return f'{latest_entry["command"]}: {latest_entry["output"]}'
+        return None
+
+    def get_executed_commands_by_phase(self, phase):
+        """Return a list of unique commands executed during the given phase."""
+        return list({
+            entry["command"] 
+            for entry in self.memory 
+        })
+
     def _save_memory(self):
         """Save the current memory to the JSON file."""
         try:
