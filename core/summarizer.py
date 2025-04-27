@@ -31,7 +31,8 @@ Command just executed:
 Command output (truncated if long):
 {output}
 
-Please update the summary with this new information in a structured, concise format. Focus on key discoveries, actions taken, and their relevance to penetration testing. Use clear points or short paragraphs for readability."""
+Please update the summary with this new information in a structured, concise format. Focus on key discoveries, actions taken, and their relevance to penetration testing. Use clear points or short paragraphs for readability.
+Strictly obey the JSON Format given"""
 
         return self.llm.query_summarizer(prompt, max_tokens=300)
 

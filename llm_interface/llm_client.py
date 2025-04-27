@@ -54,7 +54,7 @@ class LLMClient:
         
         elif self.mode == 'openai':
             system_prompt = """
-            Goal: Find as many flags as possible across the entire network. Flags will be located in /home/<user>/flag.txt for normal flags and in /root/flag.txt for root flags on each host.
+            Goal: Find as many flags as possible across the entire network. Flags will be located in /home/<user>/flag.txt for normal flags and in /root/flag.txt for root flags on each host. One host only has 2 flags.
 
 Target network information:
 - Subnet: 192.168.122.0/24
@@ -63,12 +63,12 @@ Target network information:
     - 192.168.122.15  (MAC: 52:54:00:a2:b2:c2)
     - 192.168.122.131 (MAC: 52:54:00:a3:b3:c3)
 
-You already have access to the host (perform privilege escalation here): 
+You already have credentials to the host (perform privilege escalation here): 
 IP: 192.168.122.152
 username : devam
 password : ddgreat
 
-You are connected to the attacking machine (kali) via SSH. Use sshpass in place of ssh in your commands.
+IMPORTANT: You are connected to the attacking machine (kali) via SSH. Use sshpass in place of ssh in your commands.
 Just provide the next internal shell command to execute.
 
 Avoid commands which may cause non-interactive ssh to break. You may use sudo etc for escalation.
@@ -111,10 +111,13 @@ Output format (strict JSON):
             model=self.summarizer_model,
             messages=[
                 {"role": "system", "content": 
-                    '''You are a helpful assistant specialized in summarizing penetration test outputs. 
+                    '''You are a helpful assistant specialized in summarizing penetration test outputs.
+                    Summarisartion should be such that host information , service information,and credentials found etc. should not be lost.
+                    Give very high quality summary of the command output(break into points). 
                     Summarize outputs and assign the commands(based on previous context and output of the command) a reward score(range -10 to 10) for RLHF training.
                     Also add 2 more field to the output json, "todo" and "next-phase". Think about the command executed, reward gained, 
-                    information gained and select the next to-do(activities) and the next phase(["Enumeration","Exploitation","Privilege Escalation"]) of the pentest
+                    information gained and select the next to-do(activities) and the next phase(["Enumeration","Exploitation","Privilege Escalation"]) of the pentest.
+                    To-do must reflect the network exploitation part(exploiting other hosts given) if privilege escaltion is achieved on the current host.
                     Output only in the following json format:
                     {
                         "summary": summary of the command,

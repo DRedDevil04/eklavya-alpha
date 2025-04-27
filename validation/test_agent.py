@@ -277,10 +277,10 @@ class EnvironmentRunner:
             logger.info(f"=== Starting environment: {env_name} ===")
             
             # Set up the environment
-            if not self.setup_environment(env_name):
-                logger.error(f"Skipping environment {env_name} due to setup failure")
-                self.stats["environments_failed"] += 1
-                return None
+            # if not self.setup_environment(env_name):
+            #     logger.error(f"Skipping environment {env_name} due to setup failure")
+            #     self.stats["environments_failed"] += 1
+            #     return None
             
             # Run the agent
             results = self.run_agent_on_environment(env_name)

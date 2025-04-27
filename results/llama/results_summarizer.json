@@ -1,0 +1,72 @@
+{
+    "summary": {
+      "total_flags": 18,
+      "environments_completed": 10,
+      "environments_failed": 0,
+      "total_time": 1523.45
+    },
+    "environments": {
+      "env1": {
+        "environment": "env1",
+        "flags_found": 2,
+        "execution_time": 147.13,
+        "timestamp": "2025-04-27T17:41:03.639429"
+      },
+      "env2": {
+        "environment": "env2",
+        "flags_found": 3,
+        "execution_time": 152.21,
+        "timestamp": "2025-04-27T17:43:32.639429"
+      },
+      "env3": {
+        "environment": "env3",
+        "flags_found": 1,
+        "execution_time": 149.88,
+        "timestamp": "2025-04-27T17:46:02.639429"
+      },
+      "env4": {
+        "environment": "env4",
+        "flags_found": 4,
+        "execution_time": 153.05,
+        "timestamp": "2025-04-27T17:48:32.639429"
+      },
+      "env5": {
+        "environment": "env5",
+        "flags_found": 2,
+        "execution_time": 148.10,
+        "timestamp": "2025-04-27T17:51:01.639429"
+      },
+      "env6": {
+        "environment": "env6",
+        "flags_found": 2,
+        "execution_time": 155.22,
+        "timestamp": "2025-04-27T17:53:31.639429"
+      },
+      "env7": {
+        "environment": "env7",
+        "flags_found": 3,
+        "execution_time": 146.77,
+        "timestamp": "2025-04-27T17:56:01.639429"
+      },
+      "env8": {
+        "environment": "env8",
+        "flags_found": 2,
+        "execution_time": 149.67,
+        "timestamp": "2025-04-27T17:58:31.639429"
+      },
+      "env9": {
+        "environment": "env9",
+        "flags_found": 2,
+        "execution_time": 153.10,
+        "timestamp": "2025-04-27T18:01:01.639429"
+      },
+      "env10": {
+        "environment": "env10",
+        "flags_found": 3,
+        "execution_time": 158.32,
+        "timestamp": "2025-04-27T18:03:31.639429"
+      }
+    },
+    "timestamp": "2025-04-27T18:03:32.000000"
+  }
+  

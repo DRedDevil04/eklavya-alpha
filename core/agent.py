@@ -8,7 +8,7 @@ from core.todo import ToDoManager
 from core.memory import MemoryManager
 from core.phase_manager import PhaseManager
 from interface.connector import SSHConnector
-# from core.task_reference import TaskReference as get_fallback_task
+from core.task_reference import TaskReference
 from trainer.ppo_trainer import RLHFTrainer
 from log.logger import log
 
@@ -32,6 +32,7 @@ class PenTestAgent:
         self.todo = ToDoManager()
         self.memory = MemoryManager()
         self.phase = PhaseManager()
+        self.task_reference = TaskReference()
         self.train = train
         self.flags = set()
         self.command_count = 0
@@ -51,7 +52,7 @@ class PenTestAgent:
         log("[+] Starting penetration test agent...", color="green")
 
         # Check if SSH is connected first
-        while len(self.flags) < 6 and self.command_count < 60:
+        while len(self.flags) < 6 and self.command_count < 20:
             # Ensure SSH connection is established before proceeding
             if any("SSH into target machine" in task for task in self.todo.get_pending_tasks()):
                 log("[>] Establishing SSH connection to target machine...", color="yellow")
@@ -67,7 +68,6 @@ class PenTestAgent:
 
             current_phase = self.phase.get_phase()
             context = self.memory.retrieve_relevant_context(current_phase)
-
             planned_command, planned_input = self.planner.plan_next_step(
                 current_phase=current_phase,
                 context_summary=context,
@@ -75,17 +75,20 @@ class PenTestAgent:
                 target_ip=self.target_ip,
                 username=self.target_username,
                 password=self.target_password,
-                memory=self.memory
+                memory=self.memory,
+                task_reference=self.task_reference
             )
 
-            # if not planned_command:
-            #     fallback_task = get_fallback_task(current_phase, self.todo.get_done_tasks())
-            #     if fallback_task:
-            #         print(f"[*] Using fallback task: {fallback_task}")
-            #         planned_command = self.planner.nudge_with_task(fallback_task)
-            #     else:
-            #         print("[!] No tasks available. Ending test.")
-            #         break
+            if not planned_command:
+                # Use TaskReference to get fallback task
+                completed_tasks = self.todo.get_done_tasks()
+                fallback_task = self.task_reference.suggest_next_task(current_phase, completed_tasks)
+                if fallback_task:
+                    log(f"[*] Using fallback task: {fallback_task}", color="yellow")
+                    planned_command, planned_input = self.planner.nudge_with_task(fallback_task, current_phase)
+                else:
+                    log("[!] No tasks available. Ending test.", color="red")
+                    break
 
             # Execute the planned command via SSH
             log(f"[>] Running command: {planned_command}", color="yellow")
@@ -108,20 +111,18 @@ class PenTestAgent:
 
             # Update todo list with new tasks from the summary
             self.todo.update(summary)  # Assuming your new ToDoManager has an extract_and_add_tasks method
+            self.phase.update_phase(summary)  # Update the phase based on the summary
             log(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}", color="blue")  # Print the updated ToDo list
 
             # Update memory with new summary, command, and output
             self.memory.store(summary, planned_command, output)
 
-            # Check for phase transition
-            self.phase.get_phase()
-
             log(f"[+] Completed tasks: {self.todo.get_done_tasks()}", color="green")  # Debug the completed task
 
         log("[+] Penetration test complete.", color="green")
 
-    def setup_training(self):
-        self.trainer = RLHFTrainer(model=self.planner.llm.model, tokenizer=self.planner.llm.tokenizer)
+    # def setup_training(self):
+    #     self.trainer = RLHFTrainer(model=self.planner.llm.model, tokenizer=self.planner.llm.tokenizer)
 
     def step_train(self):
         pass

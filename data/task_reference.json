@@ -1,22 +1,16 @@
 {
     "Reconnaissance": [
-      "Port Scanning",
-      "Service Enumeration",
-      "Network Enumeration"
+      "Port Scanning & Service Enumeration using nmap"
     ],
     "Exploitation": [
-      "Password Cracking",
-      "Known Vulnerabilities",
-      "Brute-Force",
-      "Metasploit",
-      "Other Exploitation"
+      "Password Cracking using john and rockyou",
+      "Known Vulnerabilities using metasploit",
+      "Brute-Force using hydra"
     ],
     "Privilege Escalation": [
       "Credential Dumping",
-      "Kernel Exploitation",
-      "Sudo Caching",
       "Sudo Exploitation",
-      "File Analysis",
+      "File Analysis(searching for credentials)",
       "System Configuration Analysis",
       "Cronjob Analysis",
       "User Access Exploitation",
