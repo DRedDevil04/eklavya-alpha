@@ -33,7 +33,7 @@ class MemoryManager:
         self.memory.append(entry)
         self._save_memory()
 
-    def retrieve_relevant_context(self, phase):
+    def get_executed_commands_by_phase(self, phase):
         """Retrieve all summaries that are relevant to the given phase."""
         # Enhance this with more specific filtering if needed
         relevant_entries = [
@@ -48,7 +48,7 @@ class MemoryManager:
             return f'{latest_entry["command"]}: {latest_entry["output"]}'
         return None
 
-    def get_executed_commands_by_phase(self, phase):
+    def retrieve_relevant_context(self,phase):
         """Return a list of unique commands executed during the given phase."""
         return list({
             entry["command"] 

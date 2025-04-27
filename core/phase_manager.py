@@ -2,38 +2,29 @@ class PhaseManager:
     def __init__(self):
         """Initialize the phases and set the starting phase."""
         self.phases = ["Enumeration", "Exploration", "Privilege Escalation"]
-        self.current_index = 0
+        self.current_phase = "Enumeration"
 
     def get_phase(self):
         """Return the current phase."""
-        return self.phases[self.current_index]
+        return self.current_phase
 
-    def check_transition(self, todo_manager):
+    def update_phase(self, summary_json):
         """
-        Check if transition to the next phase is possible based on pending tasks
-        and completion of phase-specific goals.
+        Update the current phase based on summarizer output JSON.
         """
-        if not hasattr(todo_manager, 'get_pending_tasks'):
-            raise ValueError("todo_manager must have a method 'get_pending_tasks'.")
+        try:
+            import json
+            summary = json.loads(summary_json)
+        except json.JSONDecodeError:
+            print("[Error] Could not decode summarizer JSON.")
+            return
 
-        pending_tasks = todo_manager.get_pending_tasks()
-        done_tasks = todo_manager.get_done_tasks()
+        next_phase = summary.get("next-phase", "").strip()
 
-        # Define goal-specific checks for each phase
-        phase_goals = {
-            "Enumeration": ["Scan open ports for services", "Enumerate HTTP service", "Attempt SSH login on target machine"],
-            "Exploration": ["Find file named flag.txt on target machine", "Read contents of flag.txt using cat"],
-            # Privilege Escalation goals could be added later
-        }
+        if next_phase and next_phase in self.phases:
+            if next_phase != self.current_phase:
+                print(f"[*] Phase changed from {self.current_phase} to {next_phase}")
+                self.current_phase = next_phase
+        else:
+            print(f"[Warning] '{next_phase}' is not a valid phase.")
 
-        current_phase = self.get_phase()
-        goals = phase_goals.get(current_phase, [])
-
-        # Check if all goals for this phase are completed
-        goals_done = all(goal in done_tasks for goal in goals)
-
-        if len(pending_tasks) == 0 and goals_done and self.current_index < len(self.phases) - 1:
-            self.current_index += 1
-            print(f"[*] Transitioned to next phase: {self.get_phase()}")
-            return True
-        return False

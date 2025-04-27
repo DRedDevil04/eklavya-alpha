@@ -8,7 +8,7 @@ from core.todo import ToDoManager
 from core.memory import MemoryManager
 from core.phase_manager import PhaseManager
 from interface.connector import SSHConnector
-from core.task_reference import TaskReference as get_fallback_task
+# from core.task_reference import TaskReference as get_fallback_task
 from trainer.ppo_trainer import RLHFTrainer
 from log.logger import log
 
@@ -16,16 +16,16 @@ torch.cuda.empty_cache()
 gc.collect()
 
 class PenTestAgent:
-    def __init__(self, train=False):
+    def __init__(self,ip= "192.168.122.152", username="devam", password="ddgreat", train=False):
         """Initialize the PenTestAgent with required components."""
         # Connection to attacker machine
         self.ssh = SSHConnector("192.168.122.186", "kali", "kali")
         self.ssh.create_ssh_session()
 
         # Target info (victim machine)
-        self.target_ip = "192.168.122.97"
-        self.target_username = "devam"
-        self.target_password = "ddgreat"
+        self.target_ip = ip
+        self.target_username = username 
+        self.target_password = password 
 
         self.planner = Planner()
         self.summarizer = Summarizer()
@@ -33,35 +33,42 @@ class PenTestAgent:
         self.memory = MemoryManager()
         self.phase = PhaseManager()
         self.train = train
-        self.flag_count=0
+        self.flags = set()
+        self.command_count = 0
         # Adding SSH login to the ToDo list as the first task
         self.todo.update(f"SSH into target machine at {self.target_ip}.")
 
     def flag_found(self, text):
         """Check if the flag is found in the text (output or summary)."""
-        return bool(re.search(r"flag\{.*?\}", text, re.IGNORECASE))
+        # Regex pattern to match flag format
+        match=re.search(r"flag\{.*?\}", text, re.IGNORECASE)
+        if match:
+            flag = match.group()  # Extract matched flag like 'flag{secret_value}'
+            self.flags.add(flag)
+        return bool(match)
 
     def run(self):
-        log("[+] Starting penetration test agent...",color="green")
+        log("[+] Starting penetration test agent...", color="green")
 
         # Check if SSH is connected first
-        while not self.todo.is_complete() or not self.flag_found(""):
+        while len(self.flags) < 6 and self.command_count < 60:
             # Ensure SSH connection is established before proceeding
-            if "SSH into target machine" in self.todo.get_pending_tasks():
-                log("[>] Establishing SSH connection to target machine...",color="yellow")
+            if any("SSH into target machine" in task for task in self.todo.get_pending_tasks()):
+                log("[>] Establishing SSH connection to target machine...", color="yellow")
                 self.ssh.create_ssh_session()
                 if not self.ssh.is_connected():
                     print("[!] SSH connection failed. Exiting test.")
                     return
 
                 # Mark SSH connection task as done
+                self.todo._mark_task_done(f"SSH into target machine at {self.target_ip}.")
                 self.todo.update("SSH connection established.")
-                log(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}",color="blue")  # Print the ToDo list after SSH
+                log(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}", color="blue")  # Print the ToDo list after SSH
 
             current_phase = self.phase.get_phase()
             context = self.memory.retrieve_relevant_context(current_phase)
 
-            planned_command,planned_input = self.planner.plan_next_step(
+            planned_command, planned_input = self.planner.plan_next_step(
                 current_phase=current_phase,
                 context_summary=context,
                 todo_list=self.todo.get_pending_tasks(),
@@ -71,56 +78,53 @@ class PenTestAgent:
                 memory=self.memory
             )
 
-            if not planned_command:
-                fallback_task = get_fallback_task(current_phase, self.todo.get_done_tasks())
-                if fallback_task:
-                    print(f"[*] Using fallback task: {fallback_task}")
-                    planned_command = self.planner.nudge_with_task(fallback_task)
-                else:
-                    print("[!] No tasks available. Ending test.")
-                    break
+            # if not planned_command:
+            #     fallback_task = get_fallback_task(current_phase, self.todo.get_done_tasks())
+            #     if fallback_task:
+            #         print(f"[*] Using fallback task: {fallback_task}")
+            #         planned_command = self.planner.nudge_with_task(fallback_task)
+            #     else:
+            #         print("[!] No tasks available. Ending test.")
+            #         break
 
             # Execute the planned command via SSH
-            log(f"[>] Running command: {planned_command}",color="yellow")
-            log(f"[>] Input data: {planned_input}",color="yellow")  # Debug the input data
-            output = self.ssh.execute_command(planned_command,input_data=planned_input)
-            log(f"[<] Command output: {output}",color="cyan")  # Debug the command output
+            log(f"[>] Running command: {planned_command}", color="yellow")
+            self.command_count += 1
+            log(f"[>] Input data: {planned_input}", color="yellow")  # Debug the input data
+            output = self.ssh.execute_command(planned_command, input_data=planned_input)
+            log(f"[<] Command output: {output}", color="cyan")  # Debug the command output
 
             if output == "":
-                log("[!] No output from the command. This might indicate a problem with SSH or the target machine.",color="red")
-            
+                log("[!] No output from the command. This might indicate a problem with SSH or the target machine.", color="red")
+
             # Summarize the command output
-            summary = self.summarizer.summarize_command_output(planned_command, output, context)
-            log(f"[+] Summary: {summary}",color="blue")  # Debug summary output
+            summary = self.summarizer.summarize_command_output(planned_command, output, context,current_phase)
+            log(f"[+] Summary: {summary}", color="blue")  # Debug summary output
 
             # Check for flag
             if self.flag_found(output) or self.flag_found(summary):
-                log(f"[!!!] FLAG FOUND! 🎯\n\n{summary}",color="green")
+                log(f"[!!!] FLAG FOUND! 🎯\n\n{summary}", color="green")
                 self.memory.store(summary, planned_command, output)
-                if(self.flag_count >=2):
-                    break
 
             # Update todo list with new tasks from the summary
-            self.todo.update(summary)  # Update with any new tasks discovered
-            log(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}",color="blue")  # Print the updated ToDo list
+            self.todo.update(summary)  # Assuming your new ToDoManager has an extract_and_add_tasks method
+            log(f"[+] Updated ToDo list: {self.todo.get_pending_tasks()}", color="blue")  # Print the updated ToDo list
 
             # Update memory with new summary, command, and output
             self.memory.store(summary, planned_command, output)
 
             # Check for phase transition
-            self.phase.check_transition(self.todo)
+            self.phase.get_phase()
 
-            log(f"[+] Completed task: {self.todo.get_done_tasks()[-1]}",color="green")  # Debug the completed task
+            log(f"[+] Completed tasks: {self.todo.get_done_tasks()}", color="green")  # Debug the completed task
 
-        log("[+] Penetration test complete.",color="green")
+        log("[+] Penetration test complete.", color="green")
 
+    def setup_training(self):
+        self.trainer = RLHFTrainer(model=self.planner.llm.model, tokenizer=self.planner.llm.tokenizer)
 
-        def setup_training(self):
-            self.trainer = RLHFTrainer(model = self.planner.llm.model, tokenizer = self.planner.llm.tokenizer)
-        
-        def step_train(self):
-            pass
-        
+    def step_train(self):
+        pass
 
 # Example usage
 if __name__ == "__main__":

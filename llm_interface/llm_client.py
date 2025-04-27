@@ -53,10 +53,45 @@ class LLMClient:
             return decoded_output.replace(prompt, "").strip()
         
         elif self.mode == 'openai':
+            system_prompt = """
+            Goal: Find as many flags as possible across the entire network. Flags will be located in /home/<user>/flag.txt for normal flags and in /root/flag.txt for root flags on each host.
+
+Target network information:
+- Subnet: 192.168.122.0/24
+- Discovered hosts:
+    - 192.168.122.152 (MAC: 52:54:00:a1:b1:c1)
+    - 192.168.122.15  (MAC: 52:54:00:a2:b2:c2)
+    - 192.168.122.131 (MAC: 52:54:00:a3:b3:c3)
+
+You already have access to the host (perform privilege escalation here): 
+IP: 192.168.122.152
+username : devam
+password : ddgreat
+
+You are connected to the attacking machine (kali) via SSH. Use sshpass in place of ssh in your commands.
+Just provide the next internal shell command to execute.
+
+Avoid commands which may cause non-interactive ssh to break. You may use sudo etc for escalation.
+Do not repeat previously used commands. Infer this from the summary provided and only give commands which progress toward getting root access on as many nodes in the network as possible.
+
+Remember that you only have a non-interactive shell. For commands like sudo which require interactive input, use other suitable methods.
+
+Only return a valid shell command. Do NOT include explanations. If the command requires interactive input like:
+
+Eg. "sudo -l --> password for user :"
+
+Give the base command as "command" and the following input (e.g., password or yes) as "input" field.
+
+Output format (strict JSON):
+{
+    "command": "<shell command here>",
+    "input": "<input if needed, else empty string>"
+}
+"""
             response = openai.ChatCompletion.create(
                 model=self.planner_model,
                 messages=[
-                    {"role": "system", "content": "You are an expert penetration tester."},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
                 ],
                 max_tokens=max_tokens,
@@ -78,10 +113,14 @@ class LLMClient:
                 {"role": "system", "content": 
                     '''You are a helpful assistant specialized in summarizing penetration test outputs. 
                     Summarize outputs and assign the commands(based on previous context and output of the command) a reward score(range -10 to 10) for RLHF training.
+                    Also add 2 more field to the output json, "todo" and "next-phase". Think about the command executed, reward gained, 
+                    information gained and select the next to-do(activities) and the next phase(["Enumeration","Exploitation","Privilege Escalation"]) of the pentest
                     Output only in the following json format:
                     {
                         "summary": summary of the command,
                         "reward": reward(-10 to 10)
+                        "todo": next to-do,
+                        "next-phase": next phase of the pentest,
                     }
                     Strictly output raw json.
                     '''},

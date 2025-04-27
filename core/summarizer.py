@@ -14,6 +14,13 @@ class Summarizer:
 
         prompt = f"""You are an assistant helping summarize the progress of an automated penetration testing agent.
 
+Target network information:
+- Subnet: 192.168.122.0/24
+- Discovered hosts:
+    - 192.168.122.152 (MAC: 52:54:00:a1:b1:c1)
+    - 192.168.122.15  (MAC: 52:54:00:a2:b2:c2)
+    - 192.168.122.131 (MAC: 52:54:00:a3:b3:c3)
+
 {f"Current phase: {phase}" if phase else ""}
 
 Previous summary:

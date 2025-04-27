@@ -30,7 +30,7 @@ class TaskReference:
         """Suggest the next task for the given phase by looking at incomplete tasks."""
         available_tasks = self.get_available_tasks(phase)
         remaining_tasks = [task for task in available_tasks if task not in completed_tasks]
-        return remaining_tasks[0] if remaining_tasks else None
+        return  None
 
     def print_task_reference(self):
         """Print all tasks for debugging or review."""

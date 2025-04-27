@@ -2,7 +2,7 @@
 
 # Create users with specified passwords
 sudo useradd -m -s /bin/bash josh
-echo "josh:KJAHawe" | sudo chpasswd
+echo "devam:ddgreat" | sudo chpasswd
 
 sudo useradd -m -s /bin/bash john
 echo "john:987654321" | sudo chpasswd

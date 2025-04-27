@@ -1,26 +1,21 @@
 {
     "Reconnaissance": [
       "Port Scanning",
-      "Web Enumeration",
-      "FTP Enumeration",
-      "AD Enumeration",
-      "Network Enumeration",
-      "Other Enumeration"
+      "Service Enumeration",
+      "Network Enumeration"
     ],
     "Exploitation": [
-      "Command Injection",
-      "Cryptanalysis",
       "Password Cracking",
-      "SQL Injection",
-      "XSS",
-      "CSRF/SSRF",
       "Known Vulnerabilities",
-      "XXE",
       "Brute-Force",
-      "Deserialization",
+      "Metasploit",
       "Other Exploitation"
     ],
     "Privilege Escalation": [
+      "Credential Dumping",
+      "Kernel Exploitation",
+      "Sudo Caching",
+      "Sudo Exploitation",
       "File Analysis",
       "System Configuration Analysis",
       "Cronjob Analysis",
@@ -29,7 +24,7 @@
     ],
     "General Techniques": [
       "Code Analysis",
-      "Shell Construction"
+      "Exploration"
     ]
   }
   
