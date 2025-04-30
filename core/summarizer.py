@@ -36,7 +36,7 @@ Strictly obey the JSON Format given"""
 
         return self.llm.query_summarizer(prompt, max_tokens=300)
 
-    def _truncate_output(self, text, max_lines=40):
+    def _truncate_output(self, text, max_lines=100):
         """Truncate output to prevent LLM context overload."""
         lines = text.strip().splitlines()
         if len(lines) > max_lines:

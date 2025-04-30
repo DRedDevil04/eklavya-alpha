@@ -5,7 +5,7 @@ from log.logger import log
 class Planner:
     def __init__(self):
         # Initialize LLMClient with OpenAI
-        self.llm = LLMClient(mode='openai', planner_model_name='gpt-4o')
+        self.llm = LLMClient(mode='openai', planner_model_name='gpt-4o-mini')
 
     def plan_next_step(self, current_phase, context_summary, todo_list, target_ip, username, password, memory,task_reference=None):
 
@@ -46,7 +46,7 @@ class Planner:
 
     Pending tasks:
     {', '.join(todo_list) if todo_list else "None"}
-     
+    TAKE VERY GOOD CARE ABOUT THE SSH, YOU ARE NOT ON THE HOST, YOU ARE EXECUTING COMMANDS ON THE ATTACKING MACHINE.
     Output raw JSON without any formatting
     """
 

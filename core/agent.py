@@ -11,6 +11,7 @@ from interface.connector import SSHConnector
 from core.task_reference import TaskReference
 from trainer.ppo_trainer import RLHFTrainer
 from log.logger import log
+from validation.summarisation import evaluate_summary
 
 torch.cuda.empty_cache()
 gc.collect()
@@ -103,6 +104,9 @@ class PenTestAgent:
             # Summarize the command output
             summary = self.summarizer.summarize_command_output(planned_command, output, context,current_phase)
             log(f"[+] Summary: {summary}", color="blue")  # Debug summary output
+            
+            # Evaluate the summary and store it in memory
+            evaluate_summary(self.command_count, planned_command, summary)
 
             # Check for flag
             if self.flag_found(output) or self.flag_found(summary):
