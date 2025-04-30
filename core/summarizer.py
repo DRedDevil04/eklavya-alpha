@@ -32,7 +32,8 @@ Command output (truncated if long):
 {output}
 
 Please update the summary with this new information in a structured, concise format. Focus on key discoveries, actions taken, and their relevance to penetration testing. Use clear points or short paragraphs for readability.
-Strictly obey the JSON Format given"""
+Strictly obey the JSON Format given
+GIVE STRICT PURE JSON, NO FORMATTING"""
 
         return self.llm.query_summarizer(prompt, max_tokens=300)
 

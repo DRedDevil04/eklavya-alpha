@@ -1,0 +1,17 @@
+{
+    "summary": {
+        "total_flags": 2,
+        "environments_completed": 1,
+        "environments_failed": 0,
+        "total_time": 155.30014419555664
+    },
+    "environments": {
+        "env1": {
+            "environment": "env1",
+            "flags_found": 2,
+            "execution_time": 155.30014419555664,
+            "timestamp": "2025-04-30T16:18:29.097068"
+        }
+    },
+    "timestamp": "2025-04-30T16:18:29.097506"
+}

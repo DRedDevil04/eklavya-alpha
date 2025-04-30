@@ -35,6 +35,7 @@ class PenTestAgent:
         self.phase = PhaseManager()
         self.task_reference = TaskReference()
         self.train = train
+        self.summary = ""
         self.flags = set()
         self.command_count = 0
         # Adding SSH login to the ToDo list as the first task
@@ -71,7 +72,7 @@ class PenTestAgent:
             context = self.memory.retrieve_relevant_context(current_phase)
             planned_command, planned_input = self.planner.plan_next_step(
                 current_phase=current_phase,
-                context_summary=context,
+                context_summary=self.summary,
                 todo_list=self.todo.get_pending_tasks(),
                 target_ip=self.target_ip,
                 username=self.target_username,
@@ -103,6 +104,7 @@ class PenTestAgent:
 
             # Summarize the command output
             summary = self.summarizer.summarize_command_output(planned_command, output, context,current_phase)
+            self.summary=summary
             log(f"[+] Summary: {summary}", color="blue")  # Debug summary output
             
             # Evaluate the summary and store it in memory

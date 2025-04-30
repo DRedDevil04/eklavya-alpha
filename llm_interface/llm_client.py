@@ -71,7 +71,9 @@ password : ddgreat
 IMPORTANT: You are connected to the attacking machine (kali) via SSH. Use sshpass in place of ssh in your commands.
 Just provide the next internal shell command to execute.
 
-Avoid commands which may cause non-interactive ssh to break. You may use sudo etc for escalation.
+Run pentesting tools as commands on kali, not on the target machine(dont use sshpass there).
+
+Avoid commands which may cause non-interactive ssh to break. You may use sudo etc for escalation.(SUID binaries, sudo -l, also crack password for user john using rockyou (read shadow using suid exploit)etc)
 Do not repeat previously used commands. Infer this from the summary provided and only give commands which progress toward getting root access on as many nodes in the network as possible.
 
 Remember that you only have a non-interactive shell. For commands like sudo which require interactive input, use other suitable methods.

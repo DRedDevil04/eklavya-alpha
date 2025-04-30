@@ -5,7 +5,7 @@ from log.logger import log
 class Planner:
     def __init__(self):
         # Initialize LLMClient with OpenAI
-        self.llm = LLMClient(mode='openai', planner_model_name='gpt-4o-mini')
+        self.llm = LLMClient(mode='openai', planner_model_name='gpt-4.1')
 
     def plan_next_step(self, current_phase, context_summary, todo_list, target_ip, username, password, memory,task_reference=None):
 
