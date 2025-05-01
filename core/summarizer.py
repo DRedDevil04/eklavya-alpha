@@ -13,27 +13,24 @@ class Summarizer:
         output = self._truncate_output(output, max_lines=40)
 
         prompt = f"""You are an assistant helping summarize the progress of an automated penetration testing agent.
+                            
+                    {f"Current phase: {phase}" if phase else ""}
 
-Target network information:
-- Subnet: 192.168.122.0/24
-- Discovered hosts:
-    - 192.168.122.152 (MAC: 52:54:00:a1:b1:c1)
-    - 192.168.122.15  (MAC: 52:54:00:a2:b2:c2)
-    - 192.168.122.131 (MAC: 52:54:00:a3:b3:c3)
+                    Previous summary:
+                    {previous_summary if previous_summary else "None"}
 
-{f"Current phase: {phase}" if phase else ""}
+                    Command just executed:
+                    {command}
+                    Command output (truncated if long):
+                    {output}
 
-Previous summary:
-{previous_summary if previous_summary else "None"}
+                    Please update the summary with this new information in a structured, concise format. 
+                    Focus on key discoveries, actions taken, and their relevance to penetration testing. 
+                    Use clear points or short paragraphs for readability.
 
-Command just executed:
-{command}
-Command output (truncated if long):
-{output}
-
-Please update the summary with this new information in a structured, concise format. Focus on key discoveries, actions taken, and their relevance to penetration testing. Use clear points or short paragraphs for readability.
-Strictly obey the JSON Format given
-GIVE STRICT PURE JSON, NO FORMATTING"""
+                    Strictly obey the JSON Format given
+                    GIVE STRICT PURE JSON, NO FORMATTING
+                """
 
         return self.llm.query_summarizer(prompt, max_tokens=300)
 
